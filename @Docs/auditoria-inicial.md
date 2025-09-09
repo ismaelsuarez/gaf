@@ -201,3 +201,36 @@ Notas:
 - Token de Vendure con permisos mínimos necesarios para mutaciones de productos.
 - Pendiente: implementación de subida de `Asset` vía multipart conforme a `AssetServer` configurado; requiere endpoint y credenciales adecuados.
 
+## 11) Cliente Vendure Admin API (`vendureClient.ts`)
+
+### Funcionalidad implementada
+
+- `searchProductsBySku(sku: string)`
+  - Localiza variante por `sku` y devuelve el `product.id` y `variants { id, sku, stockOnHand, price }` del producto.
+  - Loggea resumen: producto encontrado y cantidad de variantes.
+
+- `createProduct(input)`
+  - Crea `Product` con traducción `es` y opcionalmente `assetIds`/`facetValueIds`.
+  - Crea variantes con `sku`, `price` (minor units) y `stockOnHand`.
+  - Loggea `id` creado y cantidad de variantes.
+
+- `updateProductVariant(input)`
+  - Actualiza una variante por `id` o resuelve `id` vía `sku`.
+  - Actualiza `price` (minor units) y/o `stockOnHand`.
+  - Loggea confirmación de actualización.
+
+- `createAssets(file: Buffer | base64, fileName?, mimeType?)`
+  - Soporta Buffer o cadena base64 (con o sin prefijo `data:`) y usa multipart con `graphql-request`.
+  - Retorna array de `assetId` creados. Loggea cantidad y advierte errores parciales.
+
+### Configuración por entorno
+
+- `VENDURE_API_URL` (Admin API)
+- `VENDURE_TOKEN` (Bearer con permisos administrativos)
+
+### Consideraciones
+
+- Precios: usar minor units (p. ej. 15500 = $155,00).
+- Errores: se capturan y se registran con contexto de operación.
+- Uploads: requieren que la instancia soporte multipart en Admin API y permisos de creación de `Asset`.
+
