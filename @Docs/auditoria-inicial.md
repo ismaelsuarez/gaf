@@ -234,3 +234,27 @@ Notas:
 - Errores: se capturan y se registran con contexto de operación.
 - Uploads: requieren que la instancia soporte multipart en Admin API y permisos de creación de `Asset`.
 
+## 12) Script de arranque (`scripts/bootstrap.sh`)
+
+### Objetivo
+
+Automatizar el arranque del entorno: creación de `.env` con defaults, build/levante de contenedores, espera de healthchecks y preparación de `sync-service`.
+
+### Acciones que realiza
+
+1. Crea `.env` en la raíz si no existe (usa defaults seguros para desarrollo).
+2. Ejecuta `docker-compose up -d --build`.
+3. Espera a Postgres y Vendure Server hasta que estén `healthy`.
+4. Muestra URLs: Admin, Shop API y Storefront.
+5. En `sync-service/`, ejecuta `npm install` y crea `sync-service/.env` si falta.
+
+### Uso
+
+```bash
+bash scripts/bootstrap.sh
+```
+
+Notas:
+- Requiere Docker/Compose instalados y puertos 3000/4000 libres.
+- Completar credenciales reales en `sync-service/.env` antes de ejecutar el sincronizador.
+
