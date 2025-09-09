@@ -117,3 +117,87 @@ Nota: El uso de `${VAR:-default}` permite operar sin `.env`. Se recomienda crear
 
 ---
 Este documento resume el estado actual del entorno y las medidas de hardening aplicadas. Cualquier cambio futuro deberá reflejarse en una nueva versión dentro de `@Docs/`.
+
+## 10) Servicio de sincronización (sync-service)
+
+### Propósito
+
+Servicio en Node.js + TypeScript para sincronizar productos desde la API externa de Zetti hacia Vendure (Admin GraphQL API), creando o actualizando productos, variantes, precios y stock; e incorporando la carga de imágenes (pendiente implementación de upload multipart según configuración de Assets).
+
+### Estructura
+
+```
+sync-service/
+  src/
+    apiClient.ts        # Cliente Zetti (OAuth2 + endpoints)
+    vendureClient.ts    # Cliente Vendure (GraphQL Admin)
+    sync.ts             # Orquestación de sincronización
+    index.ts            # Entry point (cron o ejecución única)
+  package.json
+  tsconfig.json
+  README.md
+  .env (basado en .env.example)
+```
+
+### Dependencias clave
+
+- axios, graphql-request, dotenv, ts-node, node-cron
+
+### Scripts disponibles
+
+- `dev`: `ts-node src/index.ts`
+- `build`: `tsc`
+- `sync`: `ts-node src/sync.ts`
+
+### Variables de entorno
+
+- Zetti
+  - `API_URL`
+  - `OAUTH_URL`
+  - `API_USER`
+  - `API_PASSWORD`
+  - `NODO_ID`
+- Vendure
+  - `VENDURE_API_URL` (Admin API)
+  - `VENDURE_TOKEN` (token con permisos de admin)
+- Scheduler (opcional)
+  - `SYNC_CRON` (por defecto: `0 */6 * * *`)
+  - `RUN_ONCE` (si `true`, ejecuta una vez y termina)
+
+### Flujo funcional (src/sync.ts)
+
+1. Autenticación OAuth2 contra Zetti (grant type password); almacenamiento y uso de `access_token` hasta expiración.
+2. Productos: `POST /{nodo}/products/search` (grupo 2 E-Commerce).
+3. Detalle: `POST /{nodo}/products/details-per-nodes` (campos `stock1`, `pvp`).
+4. Categorías: `POST /{nodo}/products/groups-search` (Rubro, Marca, etc.) [opcional, se recupera para futuros mapeos].
+5. Imagen: `GET /{nodo}/products/{id_producto}/image` (base64) [carga en Vendure pendiente de multipart].
+6. Vendure:
+   - Búsqueda por término/sku (consulta `search`).
+   - Crear `Product` y `ProductVariant` si no existe.
+   - Actualizar precio (`price`) y stock (`stockOnHand`) si ya existe la variante por `sku`.
+7. Logging por producto: crear/actualizar/error.
+
+Notas:
+- Precios convertidos a minor units (céntimos) cuando aplica: `price = Math.round(pvp * 100)`.
+- `sku` derivado de `code` o `id` del producto Zetti.
+
+### Ejecución
+
+- Una sola corrida:
+  ```bash
+  npm run sync
+  ```
+- Programado (cron) cada 6 horas por defecto:
+  ```bash
+  npm run dev
+  ```
+  - Configurable con `SYNC_CRON`.
+
+### Consideraciones de auditoría
+
+- Separación de responsabilidades por archivo (`apiClient`, `vendureClient`, `sync`).
+- Control estricto de errores y logs en pasos críticos.
+- Variables sensibles fuera del VCS (`.env` recomendado, gestionar secretos en CI/Runtime).
+- Token de Vendure con permisos mínimos necesarios para mutaciones de productos.
+- Pendiente: implementación de subida de `Asset` vía multipart conforme a `AssetServer` configurado; requiere endpoint y credenciales adecuados.
+
