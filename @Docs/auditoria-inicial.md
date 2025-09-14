@@ -18,14 +18,14 @@ Incluye persistencia de datos, healthchecks, políticas de reinicio, red dedicad
 ## 2) Arquitectura y servicios
 
 - Postgres
-  - Imagen: `postgres:${POSTGRES_TAG:-16-alpine}`
+  - Imagen: `postgres:${POSTGRES_TAG:-16.4-alpine}`
   - Puerto expuesto: 5432 (desarrollo). En producción: no expuesto (sólo red interna).
   - Healthcheck: `pg_isready`
   - Restart policy: `unless-stopped`
   - Volumen: `vendure_postgres_data:/var/lib/postgresql/data`
 
 - Vendure Server
-  - Imagen: `vendureio/server:${VENDURE_IMAGE_TAG:-latest}`
+  - Imagen: `vendureio/server:${VENDURE_IMAGE_TAG:-2.2.6}`
   - Puertos: 3000:3000 (desarrollo). En producción: detrás de Traefik por 443 (TLS).
   - Endpoints:
     - Admin: `http://localhost:3000/admin`
@@ -116,10 +116,25 @@ Nota: El uso de `${VAR:-default}` permite operar sin `.env`. Se recomienda crear
 - Build del backend desde fuente (opcional)
   - Para control total en auditorías, compilar Vendure desde el repo oficial con `vendure/Dockerfile` y usar `build:` en Compose
 
+## 14) Integración de pagos (Mercado Pago)
+
+- Backend (Vendure): `apps/vendure` con `MercadoPagoPlugin` (webhook placeholder `POST /payments/mercadopago/webhook`).
+- Frontend (Storefront): plan de redirección Checkout API y retorno; confirmación final vía webhook.
+- Credenciales/Seguridad:
+  - Secrets: `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` (si aplica).
+  - Validar firma y consultar estado del pago antes de actualizar orden.
+- Referencias: ver `@Docs/mercadopago.md`, y docs oficiales (overview, reference, SDKs).
+
 ## 9) Inventario de archivos relevantes
 
 - `infra/docker-compose.yml`: orquestación de servicios, red, healthchecks y volúmenes (dev)
 - `infra/docker-compose.prod.yml`: orquestación para producción con Traefik y TLS
+- `infra/README.md`: flujo de staging/producción y notas de seguridad
+- `infra/docker-compose.vendure-src.yml`: alternativa para construir Vendure desde fuente
+- `.github/workflows/ci.yml`: lint, typecheck y test (Node 20)
+- `.github/workflows/codeql.yml`: análisis CodeQL JS/TS
+- `.github/workflows/trivy.yml`: escaneo de imagen (SARIF)
+- `.github/dependabot.yml`: updates semanales (npm, actions, docker)
 - `storefront/Dockerfile`: build del storefront, usuario no root
 - `README.md`: uso, accesos, notas de auditoría
 
@@ -149,7 +164,7 @@ sync-service/
 
 ### Dependencias clave
 
-- axios, graphql-request, dotenv, ts-node, node-cron
+- axios, graphql-request, dotenv, ts-node, node-cron, p-limit
 
 ### Scripts disponibles
 
@@ -183,7 +198,7 @@ sync-service/
    - Búsqueda por término/sku (consulta `search`).
    - Crear `Product` y `ProductVariant` si no existe.
    - Actualizar precio (`price`) y stock (`stockOnHand`) si ya existe la variante por `sku`.
-7. Logging por producto: crear/actualizar/error.
+7. Logging por producto: crear/actualizar/error; métricas por corrida.
 
 Notas:
 - Precios convertidos a minor units (céntimos) cuando aplica: `price = Math.round(pvp * 100)`.
@@ -207,7 +222,14 @@ Notas:
 - Control estricto de errores y logs en pasos críticos.
 - Variables sensibles fuera del VCS (`.env` recomendado, gestionar secretos en CI/Runtime).
 - Token de Vendure con permisos mínimos necesarios para mutaciones de productos.
-- Pendiente: implementación de subida de `Asset` vía multipart conforme a `AssetServer` configurado; requiere endpoint y credenciales adecuados.
+- Subida de `Asset` vía multipart en Admin API (requiere permisos y soporte multipart).
+
+### Robustez añadida
+
+- OAuth2: backoff exponencial y refresh automático ante 401.
+- Batching configurable (`SYNC_BATCH_SIZE`) y concurrencia limitada (`SYNC_CONCURRENCY`).
+- Métricas HTTP (`/metrics`) con `sync_created`, `sync_updated`, `sync_errors`, `sync_finished_timestamp`.
+- Tests unitarios básicos con Jest.
 
 ### Cambios recientes
 
@@ -236,7 +258,7 @@ Notas:
 ### Operación
 
 ```bash
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f infra/docker-compose.prod.yml up -d --build
 ```
 
 Requisitos:
@@ -299,7 +321,7 @@ Automatizar el arranque del entorno: creación de `.env` con defaults, build/lev
 ### Uso
 
 ```bash
-bash scripts/bootstrap.sh
+bash infra/scripts/bootstrap.sh
 ```
 
 Notas:
