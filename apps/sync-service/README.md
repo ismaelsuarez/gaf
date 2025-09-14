@@ -19,6 +19,9 @@ Crea un archivo `.env` con las siguientes variables (ejemplo abajo):
 - NODO_ID
 - VENDURE_API_URL
 - VENDURE_TOKEN
+ - SYNC_BATCH_SIZE (default 50)
+ - SYNC_CONCURRENCY (default 5)
+ - METRICS_PORT (default 9090)
 
 Ejemplo de `.env`:
 
@@ -65,4 +68,9 @@ cron.schedule('0 */6 * * *', async () => {
   await runSync();
 });
 ```
+
+## Métricas
+
+- Endpoint HTTP: `/metrics` en `METRICS_PORT` (texto plano):
+  - `sync_created`, `sync_updated`, `sync_errors` y `sync_finished_timestamp`.
 

@@ -61,7 +61,7 @@ export class ZettiApiClient {
     if (this.token && now < this.tokenExpiresAt - 30_000) {
       return this.token;
     }
-    const { data } = await this.withRetry(async () => {
+    const data = await this.withRetry(async () => {
       const form = new URLSearchParams();
       form.set('grant_type', 'password');
       form.set('username', this.username);
@@ -73,11 +73,11 @@ export class ZettiApiClient {
 
     this.token = data.access_token;
     this.tokenExpiresAt = Date.now() + data.expires_in * 1000;
-    return this.token;
+    return this.token as string;
   }
 
   private async authHeaders() {
-    const token = await this.ensureToken();
+    let token = await this.ensureToken();
     return { Authorization: `Bearer ${token}` };
   }
 
@@ -86,7 +86,16 @@ export class ZettiApiClient {
     const url = `/${this.nodoId}/products/search`;
     const payload = { groupId: 2 };
     const data = await this.withRetry(async () => {
-      return this.http.post(url, payload, { headers }).then(r => r.data);
+      try {
+        return await this.http.post(url, payload, { headers }).then(r => r.data);
+      } catch (err: any) {
+        if (err?.response?.status === 401) {
+          this.token = null;
+          headers.Authorization = `Bearer ${await this.ensureToken()}`;
+          return await this.http.post(url, payload, { headers }).then(r => r.data);
+        }
+        throw err;
+      }
     }, 'products/search');
     return data?.products ?? data ?? [];
   }
@@ -96,7 +105,16 @@ export class ZettiApiClient {
     const url = `/${this.nodoId}/products/details-per-nodes`;
     const payload = { ids };
     const data = await this.withRetry(async () => {
-      return this.http.post(url, payload, { headers }).then(r => r.data);
+      try {
+        return await this.http.post(url, payload, { headers }).then(r => r.data);
+      } catch (err: any) {
+        if (err?.response?.status === 401) {
+          this.token = null;
+          headers.Authorization = `Bearer ${await this.ensureToken()}`;
+          return await this.http.post(url, payload, { headers }).then(r => r.data);
+        }
+        throw err;
+      }
     }, 'products/details-per-nodes');
     return data?.details ?? data ?? [];
   }
@@ -106,7 +124,16 @@ export class ZettiApiClient {
     const url = `/${this.nodoId}/products/groups-search`;
     const payload = { ids };
     const data = await this.withRetry(async () => {
-      return this.http.post(url, payload, { headers }).then(r => r.data);
+      try {
+        return await this.http.post(url, payload, { headers }).then(r => r.data);
+      } catch (err: any) {
+        if (err?.response?.status === 401) {
+          this.token = null;
+          headers.Authorization = `Bearer ${await this.ensureToken()}`;
+          return await this.http.post(url, payload, { headers }).then(r => r.data);
+        }
+        throw err;
+      }
     }, 'products/groups-search');
     return data?.groups ?? data ?? [];
   }
@@ -115,7 +142,16 @@ export class ZettiApiClient {
     const headers = await this.authHeaders();
     const url = `/${this.nodoId}/products/${productId}/image`;
     const data = await this.withRetry(async () => {
-      return this.http.get(url, { headers }).then(r => r.data);
+      try {
+        return await this.http.get(url, { headers }).then(r => r.data);
+      } catch (err: any) {
+        if (err?.response?.status === 401) {
+          this.token = null;
+          headers.Authorization = `Bearer ${await this.ensureToken()}`;
+          return await this.http.get(url, { headers }).then(r => r.data);
+        }
+        throw err;
+      }
     }, 'products/image');
     const base64 = typeof data === 'string' ? data : data?.image;
     return base64 || null;

@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import pLimit from 'p-limit';
 import { ZettiApiClient } from './apiClient';
 import { VendureClient } from './vendureClient';
 
@@ -28,7 +29,12 @@ export async function runSync(): Promise<void> {
   console.log(`[SYNC] Productos E-Commerce recuperados: ${products.length}`);
 
   // Procesamiento por lotes para reducir carga y memoria
-  const batchSize = Number(process.env.SYNC_BATCH_SIZE ?? 100);
+  const batchSize = Number(process.env.SYNC_BATCH_SIZE ?? 50);
+  const concurrency = Number(process.env.SYNC_CONCURRENCY ?? 5);
+  const limit = pLimit(concurrency);
+  let createdCount = 0;
+  let updatedCount = 0;
+  let errorCount = 0;
   for (let i = 0; i < products.length; i += batchSize) {
     const batch = products.slice(i, i + batchSize);
     console.log(`[SYNC] Procesando lote ${i + 1}-${i + batch.length} de ${products.length}`);
@@ -40,7 +46,7 @@ export async function runSync(): Promise<void> {
 
     const detailsMap = new Map(details.map(d => [d.id, d]));
 
-    for (const p of batch) {
+    await Promise.all(batch.map((p) => limit(async () => {
       try {
         const d = detailsMap.get(p.id);
         const price = Math.round((d?.pvp ?? 0) * 100);
@@ -51,7 +57,6 @@ export async function runSync(): Promise<void> {
         const existing = await vendure.searchProductsBySku(sku);
         if (!existing) {
           console.log(`[CREATE] ${sku} - ${p.name}`);
-          // Imagen (opcional) antes de crear el producto, para asociarla
           let assetIds: string[] | undefined;
           const img = await zetti.fetchImageBase64(p.id);
           if (img) {
@@ -62,27 +67,27 @@ export async function runSync(): Promise<void> {
               console.warn(`[WARN] No se pudo subir asset para ${sku}: ${(e as Error).message}`);
             }
           }
-
           await vendure.createProduct({
             name: p.name,
             slug,
             description: p.description,
             assetIds,
-            variants: [
-              { sku, price, stockOnHand: stock },
-            ],
+            variants: [ { sku, price, stockOnHand: stock } ],
           });
+          createdCount++;
         } else {
           console.log(`[UPDATE] ${sku} - ${p.name}`);
           await vendure.updateProductVariant({ sku, price, stockOnHand: stock });
+          updatedCount++;
         }
       } catch (err) {
+        errorCount++;
         console.error(`[ERROR] Producto ${p.id} - ${(err as Error).message}`);
       }
-    }
+    }))
   }
 
-  console.log('[SYNC] Finalizado');
+  console.log(`[SYNC] Finalizado - created=${createdCount} updated=${updatedCount} errors=${errorCount}`);
 }
 
 
