@@ -18,6 +18,30 @@ Define estas variables en `.env` o en tu sistema de CI/CD (Secrets). No commitee
 - Healthchecks y `depends_on: condition: service_healthy` para Postgres y Vendure.
 - Límites de recursos (best-effort): `deploy.resources.limits`.
 
+### Variables y credenciales
+
+- Rotar `ADMIN_PASSWORD` en tu `.env` local (no commitear). Ejemplo `.env`:
+
+```
+POSTGRES_USER=vendure
+POSTGRES_PASSWORD=vendure
+POSTGRES_DB=vendure
+ADMIN_EMAIL=admin@admin.com
+ADMIN_PASSWORD=cambia-esto
+```
+
+- Storefront `VENDURE_API_URL`:
+  - Docker: `http://vendure_server:3000/shop-api`
+  - Local fuera de Docker: `http://localhost:3000/shop-api`
+
+### Smoke test
+
+Tras levantar Compose, verifica con:
+
+```bash
+sh scripts/smoke.sh
+```
+
 ## Producción
 
 - Orquestación: `docker compose -f infra/docker-compose.prod.yml up -d --build`

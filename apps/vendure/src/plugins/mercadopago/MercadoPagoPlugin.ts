@@ -6,6 +6,7 @@ import {
   OrderService,
   PaymentMethodHandler,
   RequestContext,
+  RequestContextService,
   VendurePlugin,
 } from '@vendure/core';
 import type { Request, Response } from 'express';
@@ -27,17 +28,31 @@ class MercadoPagoService {
   async settleByPaymentId(ctx: RequestContext, mpId: string, accessToken: string): Promise<void> {
     const mp = await this.fetchPayment(mpId, accessToken);
     if (!mp) return;
-    // Assumes externalReference has orderCode
-    // In real impl, map preference/payment metadata to Vendure orderCode
     const orderCode = (mp as any).external_reference as string | undefined;
     if (!orderCode) return;
     const order = await this.orderService.findOneByCode(ctx, orderCode);
     if (!order) return;
-    if (mp.status === 'approved') {
-      await this.orderService.addPaymentToOrder(ctx, order.id, {
-        method: 'mercado-pago',
-        metadata: { mpId },
-      });
+
+    const status = mp.status;
+    // Idempotencia best-effort: si el pago ya fue agregado con ese mpId, no duplicar
+    const alreadyPaid = (order as any)?.payments?.some?.((p: any) => p?.metadata?.mpId === mpId) || false;
+    if (status === 'approved') {
+      if (!alreadyPaid) {
+        await this.orderService.addPaymentToOrder(ctx, order.id, {
+          method: 'mercado-pago',
+          metadata: { mpId },
+        });
+      }
+      return;
+    }
+    if (status === 'rejected') {
+      // Podríamos cancelar o dejar registro; por ahora sólo registrar
+      Logger.warn(`Pago rechazado MP id=${mpId} order=${orderCode}`);
+      return;
+    }
+    if (status === 'in_process' || status === 'pending') {
+      Logger.info(`Pago pendiente MP id=${mpId} order=${orderCode}`);
+      return;
     }
   }
 }
@@ -103,8 +118,8 @@ export class MercadoPagoPlugin {
         const accessToken = process.env.MP_ACCESS_TOKEN || '';
         const id = (req.body?.data?.id || req.body?.id) as string;
         const service = app.get(MercadoPagoService);
-        // En producción usar RequestContextService para crear ctx apropiado
-        const adminCtx = (RequestContext as any).empty();
+        const rctx: RequestContextService = app.get(RequestContextService);
+        const adminCtx: RequestContext = rctx.create({ apiType: 'admin' } as any);
         await service.settleByPaymentId(adminCtx, id, accessToken);
         logger('webhook procesado', { id });
         res.status(200).send('ok');
@@ -123,10 +138,16 @@ function expressJson() {
 }
 
 function validateSignature(signature: string | undefined, secret: string, req: Request): boolean {
-  if (!secret) return true; // allow if not configured (dev only)
+  if (!secret) return true; // dev only
   if (!signature) return false;
-  // TODO: implementar validación según MCP Server HMAC; placeholder true
-  return true;
+  try {
+    const crypto = require('crypto');
+    const payload = JSON.stringify(req.body || {});
+    const hmac = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+    return signature === hmac;
+  } catch {
+    return false;
+  }
 }
 
 
