@@ -3,7 +3,7 @@ import 'dotenv/config';
 import { bootstrap, Logger, DefaultLogger, LogLevel, mergeConfig, defaultConfig } from '@vendure/core';
 import type { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
-import { MercadoPagoPlugin, mercadoPagoHandler } from './plugins/mercadopago/MercadoPagoPlugin';
+import { MercadoPagoPlugin, mercadoPagoHandler } from './plugins/mercadopago/MercadoPagoPlugin.js';
 //
 
 const db: Omit<PostgresConnectionOptions, 'type'> = {
