@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:${POSTGRES_TAG:-16.4-alpine}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vendure}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vendure}
+      POSTGRES_DB: ${POSTGRES_DB:-vendure}
+    volumes:
+      - vendure_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vendure} -d ${POSTGRES_DB:-vendure}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  vendure_server:
+    build:
+      context: ../apps/vendure
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-vendure}
+      DB_USERNAME: ${POSTGRES_USER:-vendure}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-vendure}
+      PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+volumes:
+  vendure_postgres_data:
+
+
