@@ -11,6 +11,8 @@ import {
 } from '@vendure/core';
 import type { Request, Response } from 'express';
 import pino from 'pino';
+import crypto from 'crypto';
+import bodyParser from 'body-parser';
 
 type MpPayment = { id: string; status: 'approved' | 'rejected' | 'in_process' | string };
 
@@ -128,7 +130,7 @@ export class MercadoPagoPlugin {
     }
     app.post('/payments/mercadopago/webhook', expressJson(), async (req: Request, res: Response) => {
       try {
-        const requestId = (require('crypto').randomUUID?.() ?? Math.random().toString(36).slice(2));
+        const requestId = (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2));
         res.setHeader('X-Request-Id', requestId);
         const ip = getIp(req);
         if (!rateLimit(ip)) {
@@ -151,9 +153,7 @@ export class MercadoPagoPlugin {
         res.status(200).send('ok');
       } catch (e) {
         const err = e as Error;
-        // eslint-disable-next-line no-console
-        console.error('webhook error', err.message);
-        try { pino().error({ err }, 'webhook error'); } catch {}
+        logger.error({ err }, 'webhook error');
         res.status(500).send('error');
       }
     });
@@ -161,8 +161,6 @@ export class MercadoPagoPlugin {
 }
 
 function expressJson() {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const bodyParser = require('body-parser');
   return bodyParser.json({ type: '*/*' });
 }
 
@@ -170,7 +168,6 @@ function validateSignature(signature: string | undefined, secret: string, req: R
   if (!secret) return true; // dev only
   if (!signature) return false;
   try {
-    const crypto = require('crypto');
     const payload = JSON.stringify(req.body || {});
     const hmac = crypto.createHmac('sha256', secret).update(payload).digest('hex');
     return signature === hmac;
