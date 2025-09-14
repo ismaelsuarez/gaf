@@ -12,7 +12,8 @@ RUN apk add --no-cache git \
   && rm -rf .git
 
 # Instala dependencias y construye (usar install por ausencia de lockfile en algunos tags)
-RUN npm install --omit=dev --no-audit --no-fund --legacy-peer-deps \
+# Instala dependencias (incluye dev) sin ejecutar scripts de prepare (husky)
+RUN npm install --no-audit --no-fund --legacy-peer-deps --ignore-scripts \
   && npm run build
 
 ENV PORT=4000
