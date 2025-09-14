@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 echo "[BOOTSTRAP] Directorio: $ROOT_DIR"
@@ -20,9 +20,9 @@ else
   echo "[BOOTSTRAP] .env ya existe; se mantiene."
 fi
 
-# 2) Construir/levantar Docker Compose
-echo "[BOOTSTRAP] Levantando servicios con docker-compose..."
-docker-compose up -d --build
+# 2) Construir/levantar Docker Compose (desarrollo)
+echo "[BOOTSTRAP] Levantando servicios con docker compose..."
+docker compose -f infra/docker-compose.yml up -d --build
 
 # 3) Esperar healthchecks
 echo "[BOOTSTRAP] Esperando a que Postgres esté healthy..."
@@ -44,10 +44,10 @@ echo "  - Admin: http://localhost:3000/admin"
 echo "  - Shop API: http://localhost:3000/shop-api"
 echo "  - Storefront: http://localhost:4000"
 
-# 4) Preparar sync-service
-if [[ -d sync-service ]]; then
-  echo "[BOOTSTRAP] Instalando dependencias de sync-service..."
-  cd sync-service
+# 4) Preparar sync-service (apps)
+if [[ -d apps/sync-service ]]; then
+  echo "[BOOTSTRAP] Instalando dependencias de apps/sync-service..."
+  cd apps/sync-service
   if command -v npm >/dev/null 2>&1; then
     npm install
   else
@@ -70,11 +70,12 @@ VENDURE_TOKEN=
 # SYNC_CRON=0 */6 * * *
 # RUN_ONCE=true
 EOF
-    echo "[BOOTSTRAP] sync-service/.env creado (completa credenciales)."
+    echo "[BOOTSTRAP] apps/sync-service/.env creado (completa credenciales)."
   fi
   cd "$ROOT_DIR"
 fi
 
 echo "[BOOTSTRAP] Listo. Usa 'docker ps' para verificar contenedores."
+
 
 

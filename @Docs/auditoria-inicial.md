@@ -87,9 +87,9 @@ Nota: El uso de `${VAR:-default}` permite operar sin `.env`. Se recomienda crear
 ## 6) Procedimiento de despliegue
 
 1. Requisitos: Docker Desktop (Compose incluido), puertos 3000/4000 libres
-2. En la raíz del proyecto:
+2. Desarrollo:
    ```bash
-   docker-compose up
+   docker compose -f infra/docker-compose.yml up
    ```
 3. Acceso inicial a Admin: `admin@admin.com` / `admin`
 
@@ -118,8 +118,8 @@ Nota: El uso de `${VAR:-default}` permite operar sin `.env`. Se recomienda crear
 
 ## 9) Inventario de archivos relevantes
 
-- `docker-compose.yml`: orquestación de servicios, red, healthchecks y volúmenes
-- `docker-compose.prod.yml`: orquestación para producción con Traefik y TLS
+- `infra/docker-compose.yml`: orquestación de servicios, red, healthchecks y volúmenes (dev)
+- `infra/docker-compose.prod.yml`: orquestación para producción con Traefik y TLS
 - `storefront/Dockerfile`: build del storefront, usuario no root
 - `README.md`: uso, accesos, notas de auditoría
 

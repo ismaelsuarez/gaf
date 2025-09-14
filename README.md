@@ -6,15 +6,15 @@ Este proyecto levanta un entorno completo con Docker Compose:
 - Vendure Worker
 - Storefront Remix Starter
 
-## Levantar todo el entorno
+## Levantar todo el entorno (desarrollo)
 
 ```bash
-docker-compose up
+docker compose -f infra/docker-compose.yml up
 ```
 
 Todos los servicios usan `restart: unless-stopped` y healthchecks, por lo que Compose esperará a que Postgres esté saludable antes de iniciar Vendure y el Storefront.
 
-## Accesos
+## Accesos (desarrollo)
 
 - Vendure Admin: http://localhost:3000/admin
 - Vendure API (Shop): http://localhost:3000/shop-api
@@ -76,3 +76,37 @@ Notas de seguridad:
 - Policies de reinicio `unless-stopped`.
 - Healthchecks en Postgres y Vendure Server.
 - Storefront corre como usuario no root dentro del contenedor.
+
+## Monorepo
+
+Estructura:
+
+```
+/apps
+  /vendure        # backend Vendure + worker (imagen oficial)
+  /storefront     # frontend Remix (Dockerfile)
+  /sync-service   # servicio Zetti → Vendure
+/packages
+  /config         # eslint, prettier, tsconfig base, jest
+  /utils          # helpers comunes (zod, logger)
+/infra            # docker-compose*, traefik, scripts
+```
+
+Scripts raíz sugeridos:
+
+```json
+{
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc -p packages/config/tsconfig.base.json --noEmit",
+    "format": "prettier --write .",
+    "test": "echo 'no tests'"
+  }
+}
+```
+
+Producción:
+
+```bash
+docker compose -f infra/docker-compose.prod.yml up -d --build
+```

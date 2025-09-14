@@ -1,5 +1,5 @@
 {
-  "name": "sync-service",
+  "name": "@gaf/sync-service",
   "version": "1.0.0",
   "private": true,
   "type": "module",

@@ -1,0 +1,37 @@
+{
+  "name": "gaf-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "prepare": "husky install",
+    "lint": "eslint . --config packages/config/eslint.config.cjs",
+    "typecheck": "tsc -p packages/config/tsconfig.base.json --noEmit",
+    "format": "prettier --write . --config packages/config/prettier.config.cjs",
+    "test": "echo 'no tests'"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^9.10.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-security": "^1.7.1",
+    "husky": "^9.1.5",
+    "lint-staged": "^15.2.9",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix --config packages/config/eslint.config.cjs",
+      "prettier --write --config packages/config/prettier.config.cjs"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write --config packages/config/prettier.config.cjs"
+    ]
+  }
+}
+
+
