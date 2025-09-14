@@ -131,7 +131,7 @@ export class VendureClient {
   }
 
   // 4) Subir assets desde Buffer/base64
-  async createAssets(file: Buffer | string, fileName = 'upload.jpg', mimeType = 'image/jpeg'): Promise<string[]> {
+  async createAssets(file: Buffer | string, _fileName = 'upload.jpg', mimeType = 'image/jpeg'): Promise<string[]> {
     try {
       const buffer = typeof file === 'string' ? Buffer.from(file.replace(/^data:\\w+\/[^;]+;base64,/, ''), 'base64') : file;
       const blob = new Blob([Uint8Array.from(buffer as Buffer)], { type: mimeType });

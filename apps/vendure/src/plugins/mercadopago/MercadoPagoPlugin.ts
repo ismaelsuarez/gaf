@@ -78,10 +78,7 @@ export const mercadoPagoHandler = new PaymentMethodHandler({
       metadata: { initPoint },
     };
   },
-  settlePayment: async (ctx, order, payment, args) => {
-    // Settled on webhook; here we keep pending
-    return { success: true, state: 'Settled' } as any;
-  },
+  settlePayment: async () => ({ success: true, state: 'Settled' } as any),
 });
 
 @VendurePlugin({

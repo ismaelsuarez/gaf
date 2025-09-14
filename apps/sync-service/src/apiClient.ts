@@ -77,7 +77,7 @@ export class ZettiApiClient {
   }
 
   private async authHeaders() {
-    let token = await this.ensureToken();
+    const token = await this.ensureToken();
     return { Authorization: `Bearer ${token}` };
   }
 

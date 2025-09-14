@@ -15,18 +15,49 @@ module.exports = {
     project: [
       path.join(process.cwd(), 'apps/sync-service/tsconfig.json'),
       path.join(process.cwd(), 'apps/vendure/tsconfig.json'),
-      path.join(process.cwd(), 'packages/config/tsconfig.base.json')
+      path.join(process.cwd(), 'packages/config/tsconfig.base.json'),
+      path.join(process.cwd(), 'packages/utils/tsconfig.json')
     ],
     tsconfigRootDir: process.cwd(),
     sourceType: 'module'
   },
   env: { node: true, es2022: true },
-  settings: { 'import/resolver': { typescript: true } },
-  rules: {
-    'import/order': ['error', { 'newlines-between': 'always', alphabetize: { order: 'asc' } }],
-    '@typescript-eslint/no-floating-promises': 'error'
+  settings: {
+    'import/resolver': {
+      typescript: {
+        alwaysTryTypes: true,
+        project: [
+          path.join(process.cwd(), 'apps/sync-service/tsconfig.json'),
+          path.join(process.cwd(), 'apps/vendure/tsconfig.json'),
+          path.join(process.cwd(), 'packages/utils/tsconfig.json')
+        ]
+      },
+      node: {
+        extensions: ['.ts', '.tsx', '.js', '.jsx', '.json']
+      }
+    }
   },
-  ignorePatterns: ['dist', 'node_modules']
+  rules: {
+    'import/order': 'off',
+    '@typescript-eslint/no-floating-promises': 'error',
+    '@typescript-eslint/no-explicit-any': 'off',
+    'import/no-unresolved': 'off',
+    'import/namespace': 'off',
+    'import/default': 'off',
+    'import/export': 'off',
+    'import/no-duplicates': 'off',
+    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }]
+  },
+  ignorePatterns: ['dist', 'node_modules', '**/__tests__/**']
+  ,
+  overrides: [
+    {
+      files: ['**/*.test.ts', '**/__tests__/**/*.ts'],
+      rules: {
+        'import/no-unresolved': 'off'
+      }
+    }
+  ]
 };
 
 

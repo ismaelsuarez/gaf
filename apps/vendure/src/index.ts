@@ -1,9 +1,9 @@
 import 'reflect-metadata';
 import 'dotenv/config';
-import { bootstrap, Logger, mergeConfig, OrderService, RequestContext, DefaultLogger } from '@vendure/core';
+import { bootstrap, Logger, mergeConfig, DefaultLogger } from '@vendure/core';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { MercadoPagoPlugin, mercadoPagoHandler } from './plugins/mercadopago/MercadoPagoPlugin';
-import { PaymentMethod } from '@vendure/core';
+//
 
 const db = {
   host: process.env.DB_HOST || 'localhost',
@@ -33,8 +33,8 @@ bootstrap(config)
   .then(app => {
     Logger.useLogger(new DefaultLogger({ level: 'info' }));
     // inicializa webhook express
-    // @ts-ignore
-    MercadoPagoPlugin.initWebhook(app);
+    // @ts-expect-error vendure express app typing
+    MercadoPagoPlugin.init(app);
     Logger.info('Vendure iniciado con plugin MercadoPago');
   })
   .catch(err => {

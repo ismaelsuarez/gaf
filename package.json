@@ -8,7 +8,7 @@
   "scripts": {
     "prepare": "husky install",
     "lint": "eslint . --config packages/config/.eslintrc.cjs",
-    "typecheck": "tsc -p packages/config/tsconfig.base.json --noEmit",
+    "typecheck": "npm -ws --if-present run typecheck",
     "format": "prettier --write . --config packages/config/prettier.config.cjs",
     "test": "echo 'no tests'"
   },
