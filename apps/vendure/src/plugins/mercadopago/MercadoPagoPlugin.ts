@@ -102,9 +102,10 @@ export class MercadoPagoPlugin {
         }
         const accessToken = process.env.MP_ACCESS_TOKEN || '';
         const id = (req.body?.data?.id || req.body?.id) as string;
-        const ctx = await RequestContext.create({ apiType: 'admin' } as any);
         const service = app.get(MercadoPagoService);
-        await service.settleByPaymentId(ctx, id, accessToken);
+        // En producción usar RequestContextService para crear ctx apropiado
+        const adminCtx = (RequestContext as any).empty();
+        await service.settleByPaymentId(adminCtx, id, accessToken);
         logger('webhook procesado', { id });
         res.status(200).send('ok');
       } catch (e) {
