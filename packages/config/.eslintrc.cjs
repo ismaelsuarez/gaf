@@ -48,7 +48,7 @@ module.exports = {
     'import/no-duplicates': 'off',
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }]
   },
-  ignorePatterns: ['dist', 'node_modules', '**/__tests__/**']
+  ignorePatterns: ['dist', 'node_modules', '**/__tests__/**', 'scripts/**']
   ,
   overrides: [
     {
