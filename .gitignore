@@ -1,0 +1,36 @@
+*_sessions
+.env
+*.log
+node_modules
+#public/*
+#!public/.gitkeep
+copiawhaf:Zone.Identifier
+reparar.dbf
+
+dist/
+
+# Archivos de sesión de WhatsApp
+#data/sessions/bot.qr.png
+data/sessions/baileys_store.json
+
+# Archivos temporales
+temp/*
+!temp/.gitkeep
+
+# Archivos de lock duplicados
+pnpm-lock.yaml
+
+# Logs específicos
+data/logs/*.log
+
+# Base de datos
+data/database/*.db
+
+# Documentación generada
+#docs/*.md
+#!docs/README.md
+
+# Test coverage
+coverage/
+*.lcov
+coverage-final.json

@@ -6,7 +6,7 @@ networks:
 
 services:
   postgres:
-    image: postgres:${POSTGRES_TAG:-16-alpine}
+    image: postgres:${POSTGRES_TAG:-16.4-alpine}
     container_name: vendure_postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-vendure}
@@ -24,9 +24,14 @@ services:
     restart: unless-stopped
     networks:
       - vendure_net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 
   vendure_server:
-    image: vendureio/server:${VENDURE_IMAGE_TAG:-latest}
+    image: vendureio/server:${VENDURE_IMAGE_TAG:-2.2.6}
     container_name: vendure_server
     depends_on:
       postgres:
@@ -52,9 +57,14 @@ services:
     restart: unless-stopped
     networks:
       - vendure_net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 
   vendure_worker:
-    image: vendureio/server:${VENDURE_IMAGE_TAG:-latest}
+    image: vendureio/server:${VENDURE_IMAGE_TAG:-2.2.6}
     container_name: vendure_worker
     depends_on:
       postgres:
@@ -71,11 +81,18 @@ services:
     restart: unless-stopped
     networks:
       - vendure_net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 
   storefront:
     build:
       context: ../apps/storefront
       dockerfile: Dockerfile
+      args:
+        STORE_FRONT_REF: ${STORE_FRONT_REF:-main}
     container_name: storefront
     environment:
       NODE_ENV: production
@@ -89,6 +106,11 @@ services:
     restart: unless-stopped
     networks:
       - vendure_net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
 
 volumes:
   vendure_postgres_data:
