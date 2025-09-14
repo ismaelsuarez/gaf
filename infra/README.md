@@ -3,7 +3,7 @@
 ## Versionado y pin de imágenes
 
 - Postgres: `POSTGRES_TAG` (ej. `16.4-alpine`)
-- Vendure: `VENDURE_IMAGE_TAG` (ej. `2.2.6`)
+- Vendure: build desde fuente (recomendado fijar tag/base de Node en Dockerfile si aplica)
 - Storefront: `STORE_FRONT_REF` (tag/branch/commit del repo)
 
 Define estas variables en `.env` o en tu sistema de CI/CD (Secrets). No commitees secretos al repo.
@@ -50,9 +50,18 @@ sh scripts/smoke.sh
 - Variables requeridas:
   - `ACME_EMAIL`
   - `VENDURE_DOMAIN` / `STOREFRONT_DOMAIN` (DNS apuntando al host)
-  - `POSTGRES_TAG`, `VENDURE_IMAGE_TAG`, `STORE_FRONT_REF`
+  - `POSTGRES_TAG`, `STORE_FRONT_REF`
 - Healthchecks y `depends_on: condition: service_healthy`.
 - Límites de recursos: `deploy.resources.limits` por servicio.
+
+### Seguridad (CSP / CORS)
+
+- Storefront Helmet/CSP recomendado:
+  - `default-src 'self'`
+  - `img-src 'self' data: https:`
+  - `script-src 'self' 'unsafe-inline'` (ajustar si usas CDN)
+- CORS estricto al dominio de producción en frontend/backend.
+- Desactivar `x-powered-by`, activar `X-Content-Type-Options: nosniff` y `frameguard`.
 
 ## Notas de seguridad
 
@@ -67,9 +76,8 @@ sh scripts/smoke.sh
 1) Configurar DNS → `VENDURE_DOMAIN` y `STOREFRONT_DOMAIN`.
 2) Exportar variables/tag en el entorno (o `.env` en staging):
 
-```bash
+```
 export POSTGRES_TAG=16.4-alpine
-export VENDURE_IMAGE_TAG=2.2.6
 export STORE_FRONT_REF=main
 export ACME_EMAIL=admin@dominio.com
 export VENDURE_DOMAIN=admin.dominio.com

@@ -10,6 +10,7 @@ import {
   VendurePlugin,
 } from '@vendure/core';
 import type { Request, Response } from 'express';
+import pino from 'pino';
 
 type MpPayment = { id: string; status: 'approved' | 'rejected' | 'in_process' | string };
 
@@ -102,17 +103,42 @@ export const mercadoPagoHandler = new PaymentMethodHandler({
 })
 export class MercadoPagoPlugin {
   static init(app: any) {
-    const logger = (msg: string, meta?: any) => {
-      // minimal logger; can be replaced by pino
-      // eslint-disable-next-line no-console
-      console.info(`[MP] ${msg}`, meta || '');
-    };
+    const logger = pino({ name: 'mercadopago-webhook', level: process.env.LOG_LEVEL || 'info' });
+
+    // Simple rate limiter en memoria por IP
+    const rateWindowMs = 60_000; // 1 minuto
+    const maxReqPerWindow = 60;
+    const hits = new Map<string, { count: number; resetAt: number }>();
+    function rateLimit(ip: string): boolean {
+      const now = Date.now();
+      const entry = hits.get(ip);
+      if (!entry || now > entry.resetAt) {
+        hits.set(ip, { count: 1, resetAt: now + rateWindowMs });
+        return true;
+      }
+      if (entry.count < maxReqPerWindow) {
+        entry.count++;
+        return true;
+      }
+      return false;
+    }
+
+    function getIp(req: Request): string {
+      return (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || (req.socket as any)?.remoteAddress || 'unknown';
+    }
     app.post('/payments/mercadopago/webhook', expressJson(), async (req: Request, res: Response) => {
       try {
+        const requestId = (require('crypto').randomUUID?.() ?? Math.random().toString(36).slice(2));
+        res.setHeader('X-Request-Id', requestId);
+        const ip = getIp(req);
+        if (!rateLimit(ip)) {
+          logger.warn({ requestId, ip }, 'rate limit exceeded');
+          return res.status(429).send('too many requests');
+        }
         const signature = req.headers['x-signature'] as string | undefined;
         const secret = process.env.MP_WEBHOOK_SECRET || '';
         if (!validateSignature(signature, secret, req)) {
-          logger('firma inválida');
+          logger.warn({ requestId, ip }, 'invalid signature');
           return res.status(400).send('invalid');
         }
         const accessToken = process.env.MP_ACCESS_TOKEN || '';
@@ -121,10 +147,13 @@ export class MercadoPagoPlugin {
         const rctx: RequestContextService = app.get(RequestContextService);
         const adminCtx: RequestContext = rctx.create({ apiType: 'admin' } as any);
         await service.settleByPaymentId(adminCtx, id, accessToken);
-        logger('webhook procesado', { id });
+        logger.info({ requestId, ip, id }, 'webhook processed');
         res.status(200).send('ok');
       } catch (e) {
-        Logger.error('webhook error', (e as Error).message);
+        const err = e as Error;
+        // eslint-disable-next-line no-console
+        console.error('webhook error', err.message);
+        try { pino().error({ err }, 'webhook error'); } catch {}
         res.status(500).send('error');
       }
     });
