@@ -1,3 +1,5 @@
+const path = require('path');
+
 module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
@@ -9,6 +11,15 @@ module.exports = {
     'plugin:import/typescript',
     'plugin:security/recommended'
   ],
+  parserOptions: {
+    project: [
+      path.join(process.cwd(), 'apps/sync-service/tsconfig.json'),
+      path.join(process.cwd(), 'apps/vendure/tsconfig.json'),
+      path.join(process.cwd(), 'packages/config/tsconfig.base.json')
+    ],
+    tsconfigRootDir: process.cwd(),
+    sourceType: 'module'
+  },
   env: { node: true, es2022: true },
   settings: { 'import/resolver': { typescript: true } },
   rules: {

@@ -134,7 +134,7 @@ export class VendureClient {
   async createAssets(file: Buffer | string, fileName = 'upload.jpg', mimeType = 'image/jpeg'): Promise<string[]> {
     try {
       const buffer = typeof file === 'string' ? Buffer.from(file.replace(/^data:\\w+\/[^;]+;base64,/, ''), 'base64') : file;
-      const blob = new Blob([buffer], { type: mimeType });
+      const blob = new Blob([Uint8Array.from(buffer as Buffer)], { type: mimeType });
 
       const mutation = gql`
         mutation ($input: [CreateAssetInput!]!) {

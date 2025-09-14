@@ -84,7 +84,7 @@ export async function runSync(): Promise<void> {
         errorCount++;
         console.error(`[ERROR] Producto ${p.id} - ${(err as Error).message}`);
       }
-    }))
+    })));
   }
 
   console.log(`[SYNC] Finalizado - created=${createdCount} updated=${updatedCount} errors=${errorCount}`);
