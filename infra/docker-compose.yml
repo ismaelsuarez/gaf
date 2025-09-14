@@ -31,9 +31,7 @@ services:
           memory: 1G
 
   vendure_server:
-    build:
-      context: ../apps/vendure
-      dockerfile: Dockerfile
+    image: vendureio/server:2.2.6
     container_name: vendure_server
     depends_on:
       postgres:
@@ -66,9 +64,8 @@ services:
           memory: 1G
 
   vendure_worker:
-    build:
-      context: ../apps/vendure
-      dockerfile: Dockerfile
+    image: vendureio/server:2.2.6
+    profiles: ["worker"]
     container_name: vendure_worker
     depends_on:
       postgres:
