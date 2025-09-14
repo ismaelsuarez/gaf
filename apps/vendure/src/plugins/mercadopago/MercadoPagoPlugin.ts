@@ -7,6 +7,7 @@ import {
   PaymentMethodHandler,
   RequestContext,
   RequestContextService,
+  PluginCommonModule,
   VendurePlugin,
 } from '@vendure/core';
 import type { Request, Response } from 'express';
@@ -100,7 +101,7 @@ export const mercadoPagoHandler = new PaymentMethodHandler({
 });
 
 @VendurePlugin({
-  imports: [],
+  imports: [PluginCommonModule],
   providers: [MercadoPagoService],
 })
 export class MercadoPagoPlugin {
