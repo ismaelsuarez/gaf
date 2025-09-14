@@ -7,7 +7,7 @@ RUN apk add --no-cache python3 make g++
 
 # Install deps
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev --no-audit --no-fund || npm ci --no-audit --no-fund
+RUN npm install --omit=dev --no-audit --no-fund --legacy-peer-deps || npm install --no-audit --no-fund --legacy-peer-deps
 
 # Copy source and build
 COPY tsconfig.json ./
