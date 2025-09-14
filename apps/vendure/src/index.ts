@@ -1,11 +1,13 @@
 import 'reflect-metadata';
 import 'dotenv/config';
 import { bootstrap, Logger, DefaultLogger, LogLevel } from '@vendure/core';
+import type { VendureConfig } from '@vendure/core';
+import type { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { MercadoPagoPlugin, mercadoPagoHandler } from './plugins/mercadopago/MercadoPagoPlugin';
 //
 
-const db = {
+const db: Omit<PostgresConnectionOptions, 'type'> = {
   host: process.env.DB_HOST || 'localhost',
   port: Number(process.env.DB_PORT || 5432),
   username: process.env.DB_USERNAME || 'vendure',
@@ -14,7 +16,7 @@ const db = {
 };
 
 const allowedOrigin = process.env.ALLOWED_ORIGIN || '';
-const config = {
+const config: VendureConfig = {
   apiOptions: {
     port: Number(process.env.PORT || 3000),
     cors: allowedOrigin

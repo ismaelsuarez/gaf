@@ -147,7 +147,7 @@ export class MercadoPagoPlugin {
         const id = (req.body?.data?.id || req.body?.id) as string;
         const service = app.get(MercadoPagoService);
         const rctx: RequestContextService = app.get(RequestContextService);
-        const adminCtx: RequestContext = rctx.create({ apiType: 'admin' } as any);
+        const adminCtx: RequestContext = await rctx.create({ apiType: 'admin' } as any);
         await service.settleByPaymentId(adminCtx, id, accessToken);
         logger.info({ requestId, ip, id }, 'webhook processed');
         res.status(200).send('ok');
