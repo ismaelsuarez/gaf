@@ -3,6 +3,7 @@
 - Fecha: 2025-09-09
 - Responsable: Equipo de implementación
 - Estado: Implementado y endurecido (compose + storefront)
+ - Actualizado: 2025-09-14
 
 ## 1) Alcance
 
@@ -17,15 +18,15 @@ Incluye persistencia de datos, healthchecks, políticas de reinicio, red dedicad
 ## 2) Arquitectura y servicios
 
 - Postgres
-  - Imagen: `postgres:16-alpine`
-  - Puerto expuesto: 5432
+  - Imagen: `postgres:${POSTGRES_TAG:-16-alpine}`
+  - Puerto expuesto: 5432 (desarrollo). En producción: no expuesto (sólo red interna).
   - Healthcheck: `pg_isready`
   - Restart policy: `unless-stopped`
   - Volumen: `vendure_postgres_data:/var/lib/postgresql/data`
 
 - Vendure Server
-  - Imagen: `vendureio/server:latest`
-  - Puertos: 3000:3000
+  - Imagen: `vendureio/server:${VENDURE_IMAGE_TAG:-latest}`
+  - Puertos: 3000:3000 (desarrollo). En producción: detrás de Traefik por 443 (TLS).
   - Endpoints:
     - Admin: `http://localhost:3000/admin`
     - Shop API: `http://localhost:3000/shop-api`
@@ -43,7 +44,7 @@ Incluye persistencia de datos, healthchecks, políticas de reinicio, red dedicad
 
 - Storefront Remix
   - Imagen propia construida desde `storefront-remix-starter`
-  - Puerto: 4000
+  - Puerto: 4000 (desarrollo). En producción: detrás de Traefik por 443 (TLS).
   - Ejecuta como usuario no root (`app`)
   - Vars relevantes: `VENDURE_API_URL=http://vendure_server:3000/shop-api`, `PORT=4000`
   - Restart policy: `unless-stopped`
@@ -68,6 +69,12 @@ Incluye persistencia de datos, healthchecks, políticas de reinicio, red dedicad
   - `ADMIN_PASSWORD` (default: `admin`)
 - Storefront
   - `VENDURE_API_URL` (default interno: `http://vendure_server:3000/shop-api`)
+
+### Versionado (producción)
+
+- `POSTGRES_TAG` (p. ej. `16.4-alpine`)
+- `VENDURE_IMAGE_TAG` (p. ej. `2.2.6`)
+- `STORE_FRONT_REF` (tag/branch/commit del storefront)
 
 Nota: El uso de `${VAR:-default}` permite operar sin `.env`. Se recomienda crear `.env` para entornos auditados y gestionar secretos fuera del VCS.
 
@@ -112,6 +119,7 @@ Nota: El uso de `${VAR:-default}` permite operar sin `.env`. Se recomienda crear
 ## 9) Inventario de archivos relevantes
 
 - `docker-compose.yml`: orquestación de servicios, red, healthchecks y volúmenes
+- `docker-compose.prod.yml`: orquestación para producción con Traefik y TLS
 - `storefront/Dockerfile`: build del storefront, usuario no root
 - `README.md`: uso, accesos, notas de auditoría
 
@@ -136,7 +144,7 @@ sync-service/
   package.json
   tsconfig.json
   README.md
-  .env (basado en .env.example)
+  .env (ver ejemplo inline en `README.md`)
 ```
 
 ### Dependencias clave
@@ -200,6 +208,46 @@ Notas:
 - Variables sensibles fuera del VCS (`.env` recomendado, gestionar secretos en CI/Runtime).
 - Token de Vendure con permisos mínimos necesarios para mutaciones de productos.
 - Pendiente: implementación de subida de `Asset` vía multipart conforme a `AssetServer` configurado; requiere endpoint y credenciales adecuados.
+
+### Cambios recientes
+
+- Alineación de API entre `src/sync.ts` y `src/vendureClient.ts`:
+  - `sync.ts` ahora usa `searchProductsBySku`, `createProduct`, `updateProductVariant` y `createAssets`.
+  - Se sube imagen (si disponible) antes de crear el producto para asociar `assetIds`.
+- Documentación actualizada en `sync-service/README.md` con ejemplo inline de `.env`.
+
+## 13) Entorno de producción (Traefik + TLS + versionado)
+
+### Arquitectura
+
+- `docker-compose.prod.yml` agrega un reverse proxy Traefik con TLS automático (Let's Encrypt) y enrutamiento por dominio:
+  - `VENDURE_DOMAIN` → `vendure_server` (puerto 3000 interno)
+  - `STOREFRONT_DOMAIN` → `storefront` (puerto 4000 interno)
+- Sólo se exponen puertos `80/443` en Traefik. Postgres, Vendure y Storefront quedan en red interna `vendure_net`.
+- Certificados emitidos/gestionados por Traefik con `ACME_EMAIL` y almacenamiento en volumen `traefik_letsencrypt`.
+
+### Versionado y reproducibilidad
+
+- Variables de pinning añadidas:
+  - `POSTGRES_TAG` (p. ej. `16.4-alpine`)
+  - `VENDURE_IMAGE_TAG` (p. ej. `2.2.6`)
+  - `STORE_FRONT_REF` (tag/branch/commit del repo del storefront)
+
+### Operación
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Requisitos:
+- DNS apuntando a la IP del host para `VENDURE_DOMAIN` y `STOREFRONT_DOMAIN`.
+- Variables definidas: `ACME_EMAIL`, dominios y tags.
+
+### Seguridad
+
+- Cierre de puertos de servicios de aplicación hacia el host (sólo expone Traefik).
+- TLS con certificados válidos y renovación automática.
+- Recomendado: limitar recursos, centralizar logs/metrics y backups de Postgres.
 
 ## 11) Cliente Vendure Admin API (`vendureClient.ts`)
 

@@ -27,43 +27,58 @@ export async function runSync(): Promise<void> {
   const products = await zetti.searchProductsEcommerceGroup();
   console.log(`[SYNC] Productos E-Commerce recuperados: ${products.length}`);
 
-  const ids = products.map(p => p.id);
-  const [details, groups] = await Promise.all([
-    zetti.fetchDetails(ids),
-    zetti.fetchGroups(ids),
-  ]);
+  // Procesamiento por lotes para reducir carga y memoria
+  const batchSize = Number(process.env.SYNC_BATCH_SIZE ?? 100);
+  for (let i = 0; i < products.length; i += batchSize) {
+    const batch = products.slice(i, i + batchSize);
+    console.log(`[SYNC] Procesando lote ${i + 1}-${i + batch.length} de ${products.length}`);
+    const ids = batch.map(p => p.id);
+    const [details, _groups] = await Promise.all([
+      zetti.fetchDetails(ids),
+      zetti.fetchGroups(ids),
+    ]);
 
-  const detailsMap = new Map(details.map(d => [d.id, d]));
+    const detailsMap = new Map(details.map(d => [d.id, d]));
 
-  for (const p of products) {
-    try {
-      const d = detailsMap.get(p.id);
-      const price = Math.round((d?.pvp ?? 0) * 100);
-      const stock = Math.max(0, Math.floor(d?.stock1 ?? 0));
-      const sku = p.code || p.id;
-      const slug = (p.name || sku).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    for (const p of batch) {
+      try {
+        const d = detailsMap.get(p.id);
+        const price = Math.round((d?.pvp ?? 0) * 100);
+        const stock = Math.max(0, Math.floor(d?.stock1 ?? 0));
+        const sku = p.code || p.id;
+        const slug = (p.name || sku).toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-      const existing = await vendure.findProductBySlugOrSku(sku);
-      if (!existing) {
-        console.log(`[CREATE] ${sku} - ${p.name}`);
-        const productId = await vendure.createProductWithVariant({
-          name: p.name,
-          slug,
-          description: p.description,
-          price,
-          sku,
-        });
-        // Imagen (opcional)
-        const img = await zetti.fetchImageBase64(p.id);
-        if (img) {
-          await vendure.createAssetFromBase64(img, `${sku}.jpg`);
+        const existing = await vendure.searchProductsBySku(sku);
+        if (!existing) {
+          console.log(`[CREATE] ${sku} - ${p.name}`);
+          // Imagen (opcional) antes de crear el producto, para asociarla
+          let assetIds: string[] | undefined;
+          const img = await zetti.fetchImageBase64(p.id);
+          if (img) {
+            try {
+              const ids = await vendure.createAssets(img, `${sku}.jpg`);
+              if (ids.length > 0) assetIds = ids;
+            } catch (e) {
+              console.warn(`[WARN] No se pudo subir asset para ${sku}: ${(e as Error).message}`);
+            }
+          }
+
+          await vendure.createProduct({
+            name: p.name,
+            slug,
+            description: p.description,
+            assetIds,
+            variants: [
+              { sku, price, stockOnHand: stock },
+            ],
+          });
+        } else {
+          console.log(`[UPDATE] ${sku} - ${p.name}`);
+          await vendure.updateProductVariant({ sku, price, stockOnHand: stock });
         }
-      } else {
-        console.log(`[UPDATE] ${sku} - ${p.name}`);
-        await vendure.updateVariantPriceAndStock(sku, price, stock);
+      } catch (err) {
+        console.error(`[ERROR] Producto ${p.id} - ${(err as Error).message}`);
       }
-    } catch (err) {
-      console.error(`[ERROR] Producto ${p.id} - ${(err as Error).message}`);
     }
   }
 

@@ -49,6 +49,27 @@ ADMIN_PASSWORD=admin
 - Los contenedores del server y worker comparten la misma base de datos y assets.
 - El storefront se construye desde `storefront-remix-starter` dentro de su propia imagen.
 
+## Producción (compose con Traefik + TLS)
+
+- Usa `docker-compose.prod.yml` con Traefik para TLS automático (Let's Encrypt) y dominios.
+- Variables relevantes (usar `.env` o exportar en el shell):
+  - `POSTGRES_TAG` (ej: `16.4-alpine`)
+  - `VENDURE_IMAGE_TAG` (ej: `2.2.6`)
+  - `STORE_FRONT_REF` (tag/branch/commit del storefront)
+  - `VENDURE_DOMAIN` (ej: `admin.mi-dominio.com`)
+  - `STOREFRONT_DOMAIN` (ej: `www.mi-dominio.com`)
+  - `ACME_EMAIL` (email para certificados Let's Encrypt)
+
+Despliegue:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Notas de seguridad:
+- En prod no se exponen puertos de Postgres/Vendure/Storefront al host; sólo 80/443 en Traefik.
+- Pinnea versiones: `POSTGRES_TAG`, `VENDURE_IMAGE_TAG` y `STORE_FRONT_REF`.
+
 ### Auditoría / Seguridad básica
 
 - Servicios en red dedicada `vendure_net`.

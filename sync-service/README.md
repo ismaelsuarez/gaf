@@ -10,7 +10,7 @@ npm install
 
 ## Variables de entorno
 
-Crea un archivo `.env` basado en `.env.example` con las siguientes variables:
+Crea un archivo `.env` con las siguientes variables (ejemplo abajo):
 
 - API_URL
 - OAUTH_URL
@@ -19,6 +19,25 @@ Crea un archivo `.env` basado en `.env.example` con las siguientes variables:
 - NODO_ID
 - VENDURE_API_URL
 - VENDURE_TOKEN
+
+Ejemplo de `.env`:
+
+```env
+# Zetti
+API_URL=
+OAUTH_URL=
+API_USER=
+API_PASSWORD=
+NODO_ID=
+
+# Vendure Admin API
+VENDURE_API_URL=http://localhost:3000/admin-api
+VENDURE_TOKEN=
+
+# Scheduler opcional
+# SYNC_CRON=0 */6 * * *
+# RUN_ONCE=true
+```
 
 ## Comandos
 
