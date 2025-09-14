@@ -10,7 +10,8 @@
     "lint": "eslint . --config packages/config/.eslintrc.cjs",
     "typecheck": "npm -ws --if-present run typecheck",
     "format": "prettier --write . --config packages/config/prettier.config.cjs",
-    "test": "echo 'no tests'"
+    "test": "echo 'no tests'",
+    "dev:full": "node scripts/dev-full.js"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.18.0",
