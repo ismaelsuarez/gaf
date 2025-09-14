@@ -2,7 +2,7 @@
   "name": "@gaf/vendure",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
+  
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
