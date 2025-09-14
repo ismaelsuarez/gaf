@@ -11,8 +11,8 @@ RUN apk add --no-cache git \
   && cd /app && git checkout "$STORE_FRONT_REF" || true \
   && rm -rf .git
 
-# Instala dependencias y construye
-RUN npm ci --omit=dev --no-audit --no-fund \
+# Instala dependencias y construye (usar install por ausencia de lockfile en algunos tags)
+RUN npm install --omit=dev --no-audit --no-fund --legacy-peer-deps \
   && npm run build
 
 ENV PORT=4000
