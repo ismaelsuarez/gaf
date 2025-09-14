@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "prepare": "husky install",
-    "lint": "eslint . --config packages/config/eslint.config.cjs",
+    "lint": "eslint . --config packages/config/.eslintrc.cjs",
     "typecheck": "tsc -p packages/config/tsconfig.base.json --noEmit",
     "format": "prettier --write . --config packages/config/prettier.config.cjs",
     "test": "echo 'no tests'"
@@ -15,7 +15,7 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
-    "eslint": "^9.10.0",
+    "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-security": "^1.7.1",
     "husky": "^9.1.5",
@@ -25,7 +25,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
-      "eslint --fix --config packages/config/eslint.config.cjs",
+      "eslint --fix --config packages/config/.eslintrc.cjs",
       "prettier --write --config packages/config/prettier.config.cjs"
     ],
     "*.{json,md,yml,yaml}": [
