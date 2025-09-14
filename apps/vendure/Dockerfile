@@ -1,19 +1,28 @@
-FROM node:20-alpine
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install build tools needed by some deps
+# Build tools
 RUN apk add --no-cache python3 make g++
 
-# Install deps
+# Instalar dependencias (incluye dev para compilar)
+COPY package.json package-lock.json* ./
+RUN npm install --no-audit --no-fund --legacy-peer-deps || npm install --no-audit --no-fund --legacy-peer-deps
+
+# Compilar
+COPY tsconfig.json ./
+COPY src ./src
+RUN npm run build
+
+# Runtime minimal
+FROM node:20-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+
 COPY package.json package-lock.json* ./
 RUN npm install --omit=dev --no-audit --no-fund --legacy-peer-deps || npm install --no-audit --no-fund --legacy-peer-deps
 
-# Copy source and build
-COPY tsconfig.json ./
-COPY src ./src
-ENV NODE_ENV=production
-RUN npm run build
+COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000
 CMD ["node", "dist/index.js"]
