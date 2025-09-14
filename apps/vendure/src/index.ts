@@ -3,7 +3,7 @@ import 'dotenv/config';
 import { bootstrap, Logger, DefaultLogger, LogLevel, mergeConfig, defaultConfig } from '@vendure/core';
 import type { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
-import { MercadoPagoPlugin, mercadoPagoHandler } from './plugins/mercadopago/MercadoPagoPlugin.js';
+// import { MercadoPagoPlugin, mercadoPagoHandler } from './plugins/mercadopago/MercadoPagoPlugin.js';
 //
 
 const db: Omit<PostgresConnectionOptions, 'type'> = {
@@ -29,17 +29,15 @@ const config = mergeConfig(defaultConfig, {
     logging: false,
   },
   paymentOptions: {
-    paymentMethodHandlers: [mercadoPagoHandler],
+    paymentMethodHandlers: [],
   },
-  plugins: [AdminUiPlugin.init({ route: 'admin', port: 3002 }), MercadoPagoPlugin],
+  plugins: [AdminUiPlugin.init({ route: 'admin', port: 3002 })],
 });
 
 bootstrap(config)
   .then(app => {
     Logger.useLogger(new DefaultLogger({ level: LogLevel.Info }));
-    // inicializa webhook express
-    MercadoPagoPlugin.init(app);
-    Logger.info('Vendure iniciado con plugin MercadoPago');
+    Logger.info('Vendure iniciado');
   })
   .catch(err => {
     // eslint-disable-next-line no-console
