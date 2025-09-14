@@ -2,7 +2,8 @@ import 'reflect-metadata';
 import 'dotenv/config';
 import { bootstrap, Logger, mergeConfig, OrderService, RequestContext, DefaultLogger } from '@vendure/core';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
-import { MercadoPagoPlugin } from './plugins/mercado-pago';
+import { MercadoPagoPlugin, mercadoPagoHandler } from './plugins/mercadopago/MercadoPagoPlugin';
+import { PaymentMethod } from '@vendure/core';
 
 const db = {
   host: process.env.DB_HOST || 'localhost',
@@ -21,6 +22,9 @@ const config = mergeConfig({
     ...db,
     synchronize: true,
     logging: false,
+  },
+  paymentOptions: {
+    paymentMethodHandlers: [mercadoPagoHandler],
   },
   plugins: [AdminUiPlugin.init({ route: 'admin', port: 3002 }), MercadoPagoPlugin],
 });
