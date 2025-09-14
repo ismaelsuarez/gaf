@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 import 'dotenv/config';
-import { bootstrap, Logger, DefaultLogger, LogLevel } from '@vendure/core';
-import type { VendureConfig } from '@vendure/core';
+import { bootstrap, Logger, DefaultLogger, LogLevel, mergeConfig, defaultConfig } from '@vendure/core';
 import type { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { MercadoPagoPlugin, mercadoPagoHandler } from './plugins/mercadopago/MercadoPagoPlugin';
@@ -16,7 +15,7 @@ const db: Omit<PostgresConnectionOptions, 'type'> = {
 };
 
 const allowedOrigin = process.env.ALLOWED_ORIGIN || '';
-const config: VendureConfig = {
+const config = mergeConfig(defaultConfig, {
   apiOptions: {
     port: Number(process.env.PORT || 3000),
     cors: allowedOrigin
@@ -33,7 +32,7 @@ const config: VendureConfig = {
     paymentMethodHandlers: [mercadoPagoHandler],
   },
   plugins: [AdminUiPlugin.init({ route: 'admin', port: 3002 }), MercadoPagoPlugin],
-};
+});
 
 bootstrap(config)
   .then(app => {
