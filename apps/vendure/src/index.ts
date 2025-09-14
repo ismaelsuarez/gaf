@@ -13,9 +13,13 @@ const db = {
   database: process.env.DB_NAME || 'vendure',
 };
 
+const allowedOrigin = process.env.ALLOWED_ORIGIN || '';
 const config = {
   apiOptions: {
     port: Number(process.env.PORT || 3000),
+    cors: allowedOrigin
+      ? { origin: [allowedOrigin], credentials: true, methods: 'GET,POST,PUT,DELETE,OPTIONS' }
+      : { origin: true, credentials: true },
   },
   dbConnectionOptions: {
     type: 'postgres',

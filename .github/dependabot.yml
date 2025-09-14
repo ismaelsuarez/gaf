@@ -2,15 +2,29 @@ version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
+    schedule: { interval: "weekly" }
+    open-pull-requests-limit: 5
+    groups:
+      eslint-stack:
+        patterns:
+          - "eslint"
+          - "@eslint/*"
+          - "@typescript-eslint/*"
+      types:
+        patterns:
+          - "@types/*"
+      runtime:
+        patterns:
+          - "dotenv"
+          - "zod"
+          - "node-cron"
+
   - package-ecosystem: "github-actions"
     directory: "/"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "docker"
-    directory: "/infra"
-    schedule:
-      interval: "weekly"
-
+    schedule: { interval: "weekly" }
+    open-pull-requests-limit: 3
+    groups:
+      gha:
+        patterns:
+          - "actions/*"
+          - "aquasecurity/trivy-action*"

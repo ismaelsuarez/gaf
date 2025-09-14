@@ -3,7 +3,7 @@
 ## Versionado y pin de imágenes
 
 - Postgres: `POSTGRES_TAG` (ej. `16.4-alpine`)
-- Vendure: `VENDURE_IMAGE_TAG` (ej. `2.2.6`)
+- Vendure: build desde fuente (recomendado fijar tag/base de Node en Dockerfile si aplica)
 - Storefront: `STORE_FRONT_REF` (tag/branch/commit del repo)
 
 Define estas variables en `.env` o en tu sistema de CI/CD (Secrets). No commitees secretos al repo.
@@ -18,6 +18,30 @@ Define estas variables en `.env` o en tu sistema de CI/CD (Secrets). No commitee
 - Healthchecks y `depends_on: condition: service_healthy` para Postgres y Vendure.
 - Límites de recursos (best-effort): `deploy.resources.limits`.
 
+### Variables y credenciales
+
+- Rotar `ADMIN_PASSWORD` en tu `.env` local (no commitear). Ejemplo `.env`:
+
+```
+POSTGRES_USER=vendure
+POSTGRES_PASSWORD=vendure
+POSTGRES_DB=vendure
+ADMIN_EMAIL=admin@admin.com
+ADMIN_PASSWORD=cambia-esto
+```
+
+- Storefront `VENDURE_API_URL`:
+  - Docker: `http://vendure_server:3000/shop-api`
+  - Local fuera de Docker: `http://localhost:3000/shop-api`
+
+### Smoke test
+
+Tras levantar Compose, verifica con:
+
+```bash
+sh scripts/smoke.sh
+```
+
 ## Producción
 
 - Orquestación: `docker compose -f infra/docker-compose.prod.yml up -d --build`
@@ -26,9 +50,18 @@ Define estas variables en `.env` o en tu sistema de CI/CD (Secrets). No commitee
 - Variables requeridas:
   - `ACME_EMAIL`
   - `VENDURE_DOMAIN` / `STOREFRONT_DOMAIN` (DNS apuntando al host)
-  - `POSTGRES_TAG`, `VENDURE_IMAGE_TAG`, `STORE_FRONT_REF`
+  - `POSTGRES_TAG`, `STORE_FRONT_REF`
 - Healthchecks y `depends_on: condition: service_healthy`.
 - Límites de recursos: `deploy.resources.limits` por servicio.
+
+### Seguridad (CSP / CORS)
+
+- Storefront Helmet/CSP recomendado:
+  - `default-src 'self'`
+  - `img-src 'self' data: https:`
+  - `script-src 'self' 'unsafe-inline'` (ajustar si usas CDN)
+- CORS estricto al dominio de producción en frontend/backend.
+- Desactivar `x-powered-by`, activar `X-Content-Type-Options: nosniff` y `frameguard`.
 
 ## Notas de seguridad
 
@@ -43,9 +76,8 @@ Define estas variables en `.env` o en tu sistema de CI/CD (Secrets). No commitee
 1) Configurar DNS → `VENDURE_DOMAIN` y `STOREFRONT_DOMAIN`.
 2) Exportar variables/tag en el entorno (o `.env` en staging):
 
-```bash
+```
 export POSTGRES_TAG=16.4-alpine
-export VENDURE_IMAGE_TAG=2.2.6
 export STORE_FRONT_REF=main
 export ACME_EMAIL=admin@dominio.com
 export VENDURE_DOMAIN=admin.dominio.com
