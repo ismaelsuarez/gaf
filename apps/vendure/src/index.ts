@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import 'dotenv/config';
 import { bootstrap, Logger, DefaultLogger, LogLevel, mergeConfig, defaultConfig } from '@vendure/core';
 import type { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
-import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
+// import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 // import { MercadoPagoPlugin, mercadoPagoHandler } from './plugins/mercadopago/MercadoPagoPlugin.js';
 //
 
@@ -31,7 +31,7 @@ const config = mergeConfig(defaultConfig, {
   paymentOptions: {
     paymentMethodHandlers: [],
   },
-  plugins: [AdminUiPlugin.init({ route: 'admin', port: 3002 })],
+  plugins: [],
 });
 
 bootstrap(config)
